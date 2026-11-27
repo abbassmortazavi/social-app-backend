@@ -53,10 +53,51 @@ func migrate(db *sql.DB) error {
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 		)`,
+		`CREATE TABLE IF NOT EXISTS posts (
+			id SERIAL PRIMARY KEY,
+			body TEXT  NULL,
+			file TEXT  NULL,
+			user_id INTEGER NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+    		FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS comments (
+			id SERIAL PRIMARY KEY,
+			text TEXT  NULL,
+			file TEXT  NULL,
+			post_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+    		FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    		FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS post_likes (
+			id SERIAL PRIMARY KEY,
+			post_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+    		FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    		FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE IF NOT EXISTS notifications (
+			id SERIAL PRIMARY KEY,
+			sender_id INTEGER NOT NULL,
+			receiver_id INTEGER NOT NULL,
+			title TEXT  NULL,
+			data TEXT  NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+    		FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE,
+    		FOREIGN KEY (receiver_id) REFERENCES users (id) ON DELETE CASCADE
+		)`,
 
 		`CREATE INDEX IF NOT EXISTS idx_tokens_user_id ON tokens (user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_tokens_expired_at ON tokens (expired_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_tokens_hash_token ON tokens (hash_token)`,
+		`CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts (user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments (post_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes (post_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes (user_id)`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
